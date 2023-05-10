@@ -6,3 +6,5 @@ services:
       context: .
       dockerfile: Dockerfile
     image: cassino_api
+    ports:
+      - "8080:8080"

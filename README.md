@@ -14,4 +14,4 @@
 * Transactions
 
 ## Instructions
-* run docker with Redis <code></code>
+* run <code>docker compose up --build</code>
