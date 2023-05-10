@@ -16,5 +16,8 @@ Including another URLconf
 """
 
 from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from . import views
 
-urlpatterns = []
+urlpatterns = [path("", views.hello, name="add_player")]

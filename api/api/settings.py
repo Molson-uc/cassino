@@ -29,8 +29,12 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
-INSTALLED_APPS = []
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_PERMISSION_CLASSES": [],
+    "UNAUTHENTICATED_USER": None,
+}
+INSTALLED_APPS = ["django.contrib.contenttypes", "rest_framework"]
 
 MIDDLEWARE = []
 
