@@ -20,4 +20,8 @@ from django.urls import path, include
 from rest_framework import routers
 from . import views
 
-urlpatterns = [path("", views.hello, name="add_player")]
+
+urlpatterns = [
+    path("", views.TodoViewSet.as_view({"get": "get", "post": "add"})),
+    path("table", views.TableViewSet.as_view({"get": "list", "post": "create"})),
+]
