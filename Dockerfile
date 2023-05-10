@@ -9,4 +9,4 @@ RUN /opt/venv/bin/pip install pip --upgrade && \
     /opt/venv/bin/pip install -r requirements.txt
 
 WORKDIR /app/api
-CMD /opt/venv/bin/gunicorn api.wsgi:application --bind "0.0.0.0:8000"
+CMD /opt/venv/bin/gunicorn api.wsgi:application --bind "0.0.0.0:8080"
