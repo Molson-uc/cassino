@@ -1,13 +1,9 @@
-from django.http import HttpResponse
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, status
-from django.core.cache import cache
+from rest_framework import viewsets
+
 from rest_framework.parsers import JSONParser
 from django_redis import get_redis_connection
-from .serializers import TableSerializer
+from .serializers import TableSerializer, PlayerSerializer
 
 
 class TableViewSet(viewsets.ViewSet):
@@ -15,7 +11,11 @@ class TableViewSet(viewsets.ViewSet):
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
         table_values = db.mget(table_list)
-        return Response({"tables": zip(table_list, table_values)})
+        table_urls = [
+            f"""http://127.0.0.1:8000/tables/{str(id[6:],"utf-8")}/"""
+            for id in table_list
+        ]
+        return Response({"tables": zip(table_list, table_values, table_urls)})
 
     def create(self, request):
         db = get_redis_connection("default")
@@ -35,14 +35,14 @@ class TableViewSet(viewsets.ViewSet):
             else:
                 return Response({"ERROR": "this table exists"})
 
-        return Response({"table": "create"})
+        return Response({"table": "created"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-        print(pk)
+
         table = ""
         try:
-            table = db.get(f"""table:{pk}""")
+            table = db.smembers(f"""table:{pk}""")
         except Exception as e:
             print(e)
             return Response({"error": "error"})
@@ -52,14 +52,43 @@ class TableViewSet(viewsets.ViewSet):
 
 class PlayerViewSet(viewsets.ViewSet):
     def list(self, request):
-        cache.get("player")
-        return Response({"player": "list"})
+        db = get_redis_connection("default")
+        player_list = db.keys("player:*")
+
+        player_urls = [
+            f"""http://127.0.0.1:8000/players/{str(id[7:],"utf-8")}/"""
+            for id in player_list
+        ]
+        return Response({"players": zip(player_list, player_urls)})
 
     def create(self, request):
+        db = get_redis_connection("default")
+        data = JSONParser().parse(request)
+        serializer = PlayerSerializer(data=data)
+        if serializer.is_valid():
+            player_key = f"""player:{serializer.data.get("player_id")}"""
+            player_stack = f"""player:{serializer.data.get("stack")}"""
+            if db.get(player_key) is None:
+                db.set(player_key, player_stack)
+            else:
+                return Response({"ERROR": "this player exists"})
+
         return Response({"player": "create"})
 
     def get(self, request):
         return Response({"player": "get"})
+
+    def retrieve(self, request, pk=None):
+        db = get_redis_connection("default")
+
+        player = ""
+        try:
+            player = db.get(f"""player:{pk}""")
+        except Exception as e:
+            print(e)
+            return Response({"error": "error"})
+
+        return Response(player)
 
 
 class TransactionViewSet(viewsets.ViewSet):
