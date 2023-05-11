@@ -8,27 +8,24 @@ from django.core.cache import cache
 from django_redis import get_redis_connection
 
 
-
-
-
-class TodoViewSet(viewsets.ViewSet):
-    def get(self, request):
-        return Response({"msg": "get"})
-
-    def add(self, request):
-        return Response({"msg": "add"})
-
-
 class TableViewSet(viewsets.ViewSet):
     def list(self, request):
-        ("data", "win")
-
+        db = get_redis_connection("default")
+        table_list = db.get
         return Response({"msg": "table list"})
 
     def create(self, request):
-        id = 1
-        cache.set(f"table:{id}:data", "winnnn", version="")
-        cache.
+        db = get_redis_connection("default")
+        game_master_key = "game_master" + request.data.get("game_master_id")
+        game_master_stack = request.data.get("stack") or 0
+        table_key = "table" + request.data.get("table_id")
+        if db.get(game_master_key) is None:
+            db.set(game_master_key, game_master_stack)
+        else:
+            return Response({"ERROR": "this game master exists"})
+        if db.get(table_key) is None:
+            db.sadd(table_key, game_master_key)
+
         print(cache.get("table:1:data"))
         try:
             print(request.data.get("msg"))
