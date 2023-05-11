@@ -53,7 +53,6 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-        "KEY_PREFIX": "example",
     }
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"

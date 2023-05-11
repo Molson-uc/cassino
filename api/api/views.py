@@ -5,11 +5,10 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 from rest_framework import viewsets, status
 from django.core.cache import cache
+from django_redis import get_redis_connection
 
 
-@api_view()
-def hello(request):
-    return HttpResponse("<h1>hello</h1>")
+
 
 
 class TodoViewSet(viewsets.ViewSet):
@@ -22,13 +21,15 @@ class TodoViewSet(viewsets.ViewSet):
 
 class TableViewSet(viewsets.ViewSet):
     def list(self, request):
-        cache.set("data", "win")
+        ("data", "win")
 
         return Response({"msg": "table list"})
 
     def create(self, request):
-        cache.set("data", "win", version="2")
-        print(cache.get("data"))
+        id = 1
+        cache.set(f"table:{id}:data", "winnnn", version="")
+        cache.
+        print(cache.get("table:1:data"))
         try:
             print(request.data.get("msg"))
 
@@ -36,3 +37,19 @@ class TableViewSet(viewsets.ViewSet):
             print(e)
             return Response({"error": "check content"})
         return Response({"table": "table"})
+
+
+class PlayerViewSet(viewsets.ViewSet):
+    def list(self, request):
+        cache.get("player")
+        return Response({"player": "list"})
+
+    def create(self, request):
+        return Response({"player": "create"})
+
+    def get(self, request):
+        return Response({"player": "get"})
+
+
+class TransactionViewSet(viewsets.ViewSet):
+    pass
