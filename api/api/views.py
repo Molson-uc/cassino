@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status
 from django.core.cache import cache
 from rest_framework.parsers import JSONParser
@@ -36,6 +36,18 @@ class TableViewSet(viewsets.ViewSet):
                 return Response({"ERROR": "this table exists"})
 
         return Response({"table": "create"})
+
+    def retrieve(self, request, pk=None):
+        db = get_redis_connection("default")
+        print(pk)
+        table = ""
+        try:
+            table = db.get(f"""table:{pk}""")
+        except Exception as e:
+            print(e)
+            return Response({"error": "error"})
+
+        return Response({f"table{pk}": table})
 
 
 class PlayerViewSet(viewsets.ViewSet):
