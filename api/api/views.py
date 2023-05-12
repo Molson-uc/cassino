@@ -10,12 +10,11 @@ class TableViewSet(viewsets.ViewSet):
     def list(self, request):
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
-        table_values = db.mget(table_list)
         table_urls = [
             f"""http://127.0.0.1:8000/tables/{str(id[6:],"utf-8")}/"""
             for id in table_list
         ]
-        return Response({"tables": zip(table_list, table_values, table_urls)})
+        return Response({"tables": zip(table_list, table_urls)})
 
     def create(self, request):
         db = get_redis_connection("default")
