@@ -1,9 +1,10 @@
 from rest_framework.response import Response
 from rest_framework import viewsets
-
+from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from django_redis import get_redis_connection
-from .serializers import TableSerializer, PlayerSerializer
+from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
+from .transactions import Transation
 
 
 class TableViewSet(viewsets.ViewSet):
@@ -49,6 +50,9 @@ class TableViewSet(viewsets.ViewSet):
         return Response({f"table{pk}": table})
 
 
+from django_redis import get_redis_connection
+
+
 class PlayerViewSet(viewsets.ViewSet):
     def list(self, request):
         db = get_redis_connection("default")
@@ -75,6 +79,8 @@ class PlayerViewSet(viewsets.ViewSet):
         return Response({"player": "create"})
 
     def get(self, request):
+        transaction = Transation()
+        transaction("player:1", "player:2", 100)
         return Response({"player": "get"})
 
     def retrieve(self, request, pk=None):
@@ -90,5 +96,9 @@ class PlayerViewSet(viewsets.ViewSet):
         return Response(player)
 
 
-class TransactionViewSet(viewsets.ViewSet):
-    pass
+class TransactionView(APIView):
+    def post(self, request):
+        data = JSONParser().parse(request)
+        serializer = TransactionSerializer(data=data)
+        transaction = Transation()
+        transaction("player:1", "player:2", 100)
