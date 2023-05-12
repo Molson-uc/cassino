@@ -16,3 +16,6 @@
 ## Instructions
 * run docker with Redis <code>docker compose up --build</code>
 * run redis <code>sudo docker run --name redis-stack -d -p 6379:6379 -p 8001:8001 -v "/Desktop/studia/adb/redis/data:/data" redis/redis-stack</code>
+
+tips
+go to 127.0.0.1
