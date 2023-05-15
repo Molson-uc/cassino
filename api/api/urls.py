@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.urls import path
 from django.urls import path, include
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework import routers
 from . import views
 
@@ -26,3 +27,4 @@ router.register(r"tables", views.TableViewSet, basename="tables")
 router.register(r"players", views.PlayerViewSet, basename="players")
 
 urlpatterns = router.urls
+urlpatterns += staticfiles_urlpatterns()
