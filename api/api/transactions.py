@@ -18,11 +18,12 @@ class Transation:
         redis.call('DECRBY', KEYS[1], ARGV[1])
         redis.call('INCRBY', KEYS[2], ARGV[1])
         """
-        self.transfer = self.db.register_script(self.lau_transfer)
+        self.transfer = self.db.script_load(self.lau_transfer)
+        print(self.transfer)
 
     def transaction(self, source, target, money):
         pipe = self.db.pipeline(transaction=True)
-        keys = [source, target]
-        args = [money]
-        pipe.evalsha(self.transfer, 2, *keys, *args)
+
+        pipe.evalsha(self.transfer, 2, source, target, money)
+        print(self.transfer)
         pipe.execute()

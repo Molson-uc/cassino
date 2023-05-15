@@ -80,12 +80,13 @@ class PlayerViewSet(viewsets.ViewSet):
 
     def get(self, request):
         transaction = Transation()
-        transaction("player:1", "player:2", 100)
+        transaction.transaction("player:1", "player:2", 100)
         return Response({"player": "get"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-
+        transaction = Transation()
+        transaction.transaction("player:1", "player:2", 100)
         player = ""
         try:
             player = db.get(f"""player:{pk}""")
