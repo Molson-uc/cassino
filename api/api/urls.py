@@ -15,11 +15,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.urls import path
-from django.urls import path, include
+from django.urls import include, re_path
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 from rest_framework import routers
 from . import views
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Snippets API",
+        default_version="v1",
+        description="Test description",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="contact@snippets.local"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+)
+
 
 app_name = "cassino"
 router = routers.DefaultRouter()
@@ -27,5 +41,20 @@ router.register(r"tables", views.TableViewSet, basename="tables")
 router.register(r"players", views.PlayerViewSet, basename="players")
 router.register(r"transactions", views.TransactionViewSet, basename="transactions")
 
-urlpatterns = router.urls
+urlpatterns = [
+    re_path(
+        r"^swagger(?P<format>\.json|\.yaml)$",
+        schema_view.without_ui(cache_timeout=0),
+        name="schema-json",
+    ),
+    re_path(
+        r"^swagger/$",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    re_path(
+        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+    ),
+]
 urlpatterns += staticfiles_urlpatterns()
+urlpatterns += router.urls

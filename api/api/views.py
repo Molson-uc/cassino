@@ -99,7 +99,7 @@ class PlayerViewSet(viewsets.ViewSet):
 
 
 class TransactionViewSet(viewsets.ViewSet):
-    def post(self, request):
+    def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = TransactionSerializer(data=data)
