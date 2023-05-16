@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
@@ -89,7 +90,7 @@ class PlayerViewSet(viewsets.ViewSet):
         transaction.transaction("player:1", "player:2", 100)
         player = ""
         try:
-            player = db.get(f"""player:{pk}""")
+            player = db.get(f"player:{pk}")
         except Exception as e:
             print(e)
             return Response({"error": "error"})
@@ -97,9 +98,24 @@ class PlayerViewSet(viewsets.ViewSet):
         return Response(player)
 
 
-class TransactionView(APIView):
+class TransactionViewSet(viewsets.ViewSet):
     def post(self, request):
+        db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = TransactionSerializer(data=data)
-        transaction = Transation()
-        transaction("player:1", "player:2", 100)
+        if serializer.is_valid():
+            source = serializer.data.get("source_id")
+            target = serializer.data.get("target_id")
+            money = serializer.data.get("money")
+            transaction = Transation()
+            try:
+                transaction.transaction(source, target, money)
+            except Exception as e:
+                print(e)
+                return Response({"error": "error"})
+            source_stack = db.get(source)
+            target_stack = db.get(target)
+            return Response(
+                {"source_stack": source_stack, "target_stack": target_stack}
+            )
+        return Response({"error": "error"})

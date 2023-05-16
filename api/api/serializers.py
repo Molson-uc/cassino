@@ -12,6 +12,6 @@ class PlayerSerializer(serializers.Serializer):
 
 
 class TransactionSerializer(serializers.Serializer):
-    source_id = serializers.IntegerField()
-    target_id = serializers.IntegerField()
-    money = serializers.ImageField()
+    source_id = serializers.CharField(max_length=50)
+    target_id = serializers.CharField(max_length=50)
+    money = serializers.IntegerField()

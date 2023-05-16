@@ -25,6 +25,7 @@ app_name = "cassino"
 router = routers.DefaultRouter()
 router.register(r"tables", views.TableViewSet, basename="tables")
 router.register(r"players", views.PlayerViewSet, basename="players")
+router.register(r"transactions", views.TransactionViewSet, basename="transactions")
 
 urlpatterns = router.urls
 urlpatterns += staticfiles_urlpatterns()
