@@ -1,7 +1,5 @@
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework import viewsets
-
 from rest_framework.parsers import JSONParser
 from django_redis import get_redis_connection
 from drf_yasg import openapi
@@ -95,8 +93,7 @@ class PlayerViewSet(viewsets.ViewSet):
                 db.sadd(table_key, player_key)
             else:
                 return Response({"ERROR": "this player exists"})
-
-        return Response({"player": "create"})
+        return Response({"player": "created"})
 
     def get(self, request):
         return Response({"player": "get"})
@@ -108,7 +105,6 @@ class PlayerViewSet(viewsets.ViewSet):
             player = db.get(f"player:{str(pk)}")
         except Exception as e:
             return Response({"error": e})
-
         return Response({"stack": player})
 
 
@@ -132,19 +128,27 @@ class TransactionViewSet(viewsets.ViewSet):
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
+        table_list = db.keys("table:*")
         serializer = TransactionSerializer(data=data)
+
         if serializer.is_valid():
             source = serializer.data.get("source_id")
             target = serializer.data.get("target_id")
             money = serializer.data.get("money")
-            transaction = Transation()
-            try:
-                transaction.transaction(source, target, money)
-            except Exception as e:
-                return Response({"error": e})
-            source_stack = db.get(source)
-            target_stack = db.get(target)
-            return Response(
-                {"source_stack": source_stack, "target_stack": target_stack}
-            )
-        return Response({"error": "error"})
+            source_table = ""
+            for table in table_list:
+                if db.sismember(table, source):
+                    source_table = table
+
+            if db.sismember(source_table, target):
+                transaction = Transation()
+                try:
+                    transaction.transaction(source, target, money)
+                except Exception as e:
+                    return Response({"error": e})
+                source_stack = db.get(source)
+                target_stack = db.get(target)
+                return Response(
+                    {"source_stack": source_stack, "target_stack": target_stack}
+                )
+        return Response({"error": "player from other table"})
