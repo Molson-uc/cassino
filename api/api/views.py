@@ -1,14 +1,18 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets
-from rest_framework.views import APIView
+
 from rest_framework.parsers import JSONParser
 from django_redis import get_redis_connection
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
 from .transactions import Transation
 
 
 class TableViewSet(viewsets.ViewSet):
+    serializer_class = TableSerializer
+
     def list(self, request):
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
@@ -18,6 +22,22 @@ class TableViewSet(viewsets.ViewSet):
         ]
         return Response({"tables": zip(table_list, table_urls)})
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "table_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 11"
+                ),
+                "game_master_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 11"
+                ),
+                "stack": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 0"
+                ),
+            },
+        )
+    )
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
@@ -43,18 +63,17 @@ class TableViewSet(viewsets.ViewSet):
 
         table = ""
         try:
-            table = db.smembers(f"""table:{pk}""")
+            table = db.smembers(f"""table:{str(pk)}""")
         except Exception as e:
             print(e)
             return Response({"error": "error"})
 
-        return Response({f"table{pk}": table})
-
-
-from django_redis import get_redis_connection
+        return Response({f"table{str(pk)}": table})
 
 
 class PlayerViewSet(viewsets.ViewSet):
+    serializer_class = PlayerSerializer
+
     def list(self, request):
         db = get_redis_connection("default")
         player_list = db.keys("player:*")
@@ -65,6 +84,19 @@ class PlayerViewSet(viewsets.ViewSet):
         ]
         return Response({"players": zip(player_list, player_urls)})
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "player_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 11"
+                ),
+                "stack": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 10000"
+                ),
+            },
+        )
+    )
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
@@ -80,25 +112,39 @@ class PlayerViewSet(viewsets.ViewSet):
         return Response({"player": "create"})
 
     def get(self, request):
-        transaction = Transation()
-        transaction.transaction("player:1", "player:2", 100)
         return Response({"player": "get"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-        transaction = Transation()
-        transaction.transaction("player:1", "player:2", 100)
         player = ""
         try:
-            player = db.get(f"player:{pk}")
+            player = db.get(f"player:{str(pk)}")
         except Exception as e:
             print(e)
-            return Response({"error": "error"})
+            return Response({"error": e})
 
-        return Response(player)
+        return Response({"stack": player})
 
 
 class TransactionViewSet(viewsets.ViewSet):
+    serializer_class = TransactionSerializer
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "source_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: player:1"
+                ),
+                "target_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: player:2"
+                ),
+                "money": openapi.Schema(
+                    type=openapi.TYPE_INTEGER, description="example: 1000"
+                ),
+            },
+        )
+    )
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
