@@ -16,11 +16,7 @@ class TableViewSet(viewsets.ViewSet):
     def list(self, request):
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
-        table_urls = [
-            f"""http://127.0.0.1:8000/tables/{str(id[6:],"utf-8")}/"""
-            for id in table_list
-        ]
-        return Response({"tables": zip(table_list, table_urls)})
+        return Response({"tables": table_list})
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -38,32 +34,31 @@ class TableViewSet(viewsets.ViewSet):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = TableSerializer(data=data)
+        game_master_key = ""
         if serializer.is_valid():
-            game_master_key = f"""game_master:{serializer.data.get("game_master_id")}"""
+            game_master_id = serializer.data.get("game_master_id")
+            if db.get(f"game_master:{game_master_id}") is None:
+                game_master_key = (
+                    f"""game_master:{serializer.data.get("game_master_id")}"""
+                )
+            else:
+                return Response({"error": "this game master is busy"})
             game_master_stack = serializer.data.get("stack") or 0
             table_key = f"""table:{serializer.data.get("table_id")}"""
+            db.set(game_master_key, game_master_stack)
 
-            if db.get(game_master_key) is None:
-                db.set(game_master_key, game_master_stack)
-            else:
-                return Response({"ERROR": "this game master exists"})
             if db.get(table_key) is None:
                 db.sadd(table_key, game_master_key)
             else:
                 return Response({"ERROR": "this table exists"})
 
-        return Response({"table": "created"})
+            return Response({"table": "created"})
+        return Response({"error": "didnt create new table"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-
         table = ""
-        try:
-            table = db.smembers(f"""table:{str(pk)}""")
-        except Exception as e:
-            print(e)
-            return Response({"error": "error"})
-
+        table = db.smembers(f"""table:{str(pk)}""")
         return Response({f"table{str(pk)}": table})
 
 
@@ -73,12 +68,7 @@ class PlayerViewSet(viewsets.ViewSet):
     def list(self, request):
         db = get_redis_connection("default")
         player_list = db.keys("player:*")
-
-        player_urls = [
-            f"""http://127.0.0.1:8000/players/{str(id[7:],"utf-8")}/"""
-            for id in player_list
-        ]
-        return Response({"players": zip(player_list, player_urls)})
+        return Response({"players": player_list})
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -117,7 +107,6 @@ class PlayerViewSet(viewsets.ViewSet):
         try:
             player = db.get(f"player:{str(pk)}")
         except Exception as e:
-            print(e)
             return Response({"error": e})
 
         return Response({"stack": player})
@@ -152,8 +141,7 @@ class TransactionViewSet(viewsets.ViewSet):
             try:
                 transaction.transaction(source, target, money)
             except Exception as e:
-                print(e)
-                return Response({"error": "error"})
+                return Response({"error": e})
             source_stack = db.get(source)
             target_stack = db.get(target)
             return Response(

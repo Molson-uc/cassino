@@ -19,11 +19,8 @@ class Transation:
         redis.call('INCRBY', KEYS[2], ARGV[1])
         """
         self.transfer = self.db.script_load(self.lau_transfer)
-        print(self.transfer)
 
     def transaction(self, source, target, money):
         pipe = self.db.pipeline(transaction=True)
-
         pipe.evalsha(self.transfer, 2, source, target, money)
-        print(self.transfer)
         pipe.execute()
