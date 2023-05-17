@@ -8,6 +8,7 @@ class TableSerializer(serializers.Serializer):
 
 class PlayerSerializer(serializers.Serializer):
     player_id = serializers.IntegerField()
+    table_id = serializers.ImageField()
     stack = serializers.IntegerField()
 
 

@@ -26,15 +26,11 @@ class TableViewSet(viewsets.ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "table_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 11"
-                ),
+                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="11"),
                 "game_master_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 11"
+                    type=openapi.TYPE_INTEGER, description="11"
                 ),
-                "stack": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 0"
-                ),
+                "stack": openapi.Schema(type=openapi.TYPE_INTEGER, description="0"),
             },
         )
     )
@@ -89,11 +85,10 @@ class PlayerViewSet(viewsets.ViewSet):
             type=openapi.TYPE_OBJECT,
             properties={
                 "player_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 11"
+                    type=openapi.TYPE_INTEGER, description="11"
                 ),
-                "stack": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 10000"
-                ),
+                "stack": openapi.Schema(type=openapi.TYPE_INTEGER, description="10000"),
+                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="1"),
             },
         )
     )
@@ -104,8 +99,10 @@ class PlayerViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             player_key = f"""player:{serializer.data.get("player_id")}"""
             player_stack = f"""player:{serializer.data.get("stack")}"""
+            table_key = f"""table:{serializer.data.get("table_id")}"""
             if db.get(player_key) is None:
                 db.set(player_key, player_stack)
+                db.sadd(table_key, player_key)
             else:
                 return Response({"ERROR": "this player exists"})
 
@@ -134,14 +131,12 @@ class TransactionViewSet(viewsets.ViewSet):
             type=openapi.TYPE_OBJECT,
             properties={
                 "source_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: player:1"
+                    type=openapi.TYPE_STRING, description="player:1"
                 ),
                 "target_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: player:2"
+                    type=openapi.TYPE_STRING, description="game_master:1"
                 ),
-                "money": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="example: 1000"
-                ),
+                "money": openapi.Schema(type=openapi.TYPE_INTEGER, description="1000"),
             },
         )
     )
