@@ -14,13 +14,21 @@ def test_redis():
 class Transaction:
     def __init__(self) -> None:
         self.db = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
-        self.lau_commands = """
+        self.lau_transaction = """
         redis.call('DECRBY', KEYS[1], ARGV[1])
         redis.call('INCRBY', KEYS[2], ARGV[1])
         """
-        self.commands_sha = self.db.script_load(self.lau_commands)
+        self.lau_recharge = """
+        redis.call('INCRBY', KEYS[1], ARGV[1])"""
+        self.transaction = self.db.script_load(self.lau_transaction)
+        self.recharge = self.db.script_load(self.lau_recharge)
 
-    def execute(self, source, target, money):
+    def transaction_execute(self, source, target, money):
         pipe = self.db.pipeline(transaction=True)
-        pipe.evalsha(self.commands_sha, 2, source, target, money)
+        pipe.evalsha(self.transaction, 2, source, target, money)
+        pipe.execute()
+
+    def recharge_execute(self, target, money):
+        pipe = self.db.pipeline(transaction=True)
+        pipe.evalsha(self.recharge, 1, target, money)
         pipe.execute()

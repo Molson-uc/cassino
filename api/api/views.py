@@ -53,6 +53,30 @@ class TableViewSet(viewsets.ViewSet):
             return Response({"table": "created"})
         return Response({"error": "didnt create new table"})
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "player_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="1"),
+            },
+        )
+    )
+    def update(self, reqeust, pk=None):
+        db = get_redis_connection("default")
+        player_id = reqeust.data.get("player_id")
+        player_key = f"""player:{player_id}"""
+        table_key = f"table:{pk}"
+        print(player_key, table_key)
+        try:
+            db.srem(table_key, player_key)
+            # print(db.get(table_key))
+            pass
+        except Exception as e:
+            return Response({"error": e})
+        table = db.smembers(table_key)
+        print(table)
+        return Response({"table": "table"})
+
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
         table = ""
@@ -65,8 +89,9 @@ class PlayerViewSet(viewsets.ViewSet):
 
     def list(self, request):
         db = get_redis_connection("default")
-        player_list = db.keys("player:*")
-        return Response({"players": player_list})
+        players_list = db.keys("player:*")
+        stack_list = [db.get(player) for player in players_list]
+        return Response({"players": f"{players_list} - {stack_list}"})
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -94,9 +119,6 @@ class PlayerViewSet(viewsets.ViewSet):
             else:
                 return Response({"ERROR": "this player exists"})
         return Response({"player": "created"})
-
-    def get(self, request):
-        return Response({"player": "get"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
@@ -136,19 +158,28 @@ class TransactionViewSet(viewsets.ViewSet):
             target = serializer.data.get("target_id")
             money = serializer.data.get("money")
             source_table = ""
-            for table in table_list:
-                if db.sismember(table, source):
-                    source_table = table
-
-            if db.sismember(source_table, target):
+            if source == "bank":
                 transaction = Transaction()
                 try:
-                    transaction.transaction(source, target, money)
+                    transaction.recharge_execute(target, money)
                 except Exception as e:
                     return Response({"error": e})
-                source_stack = db.get(source)
                 target_stack = db.get(target)
-                return Response(
-                    {"source_stack": source_stack, "target_stack": target_stack}
-                )
+                return Response({"target_stack": target_stack})
+            else:
+                for table in table_list:
+                    if db.sismember(table, source):
+                        source_table = table
+
+                if db.sismember(source_table, target):
+                    transaction = Transaction()
+                    try:
+                        transaction.transaction_execute(source, target, money)
+                    except Exception as e:
+                        return Response({"error": e})
+                    source_stack = db.get(source)
+                    target_stack = db.get(target)
+                    return Response(
+                        {"source_stack": source_stack, "target_stack": target_stack}
+                    )
         return Response({"error": "player from other table"})
