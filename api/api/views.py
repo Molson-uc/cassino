@@ -20,11 +20,9 @@ class TableViewSet(viewsets.ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="11"),
-                "game_master_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="11"
-                ),
-                "stack": openapi.Schema(type=openapi.TYPE_INTEGER, description="0"),
+                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "game_master_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
             },
         )
     )
@@ -57,7 +55,7 @@ class TableViewSet(viewsets.ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "player_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="1"),
+                "player_id": openapi.Schema(type=openapi.TYPE_INTEGER),
             },
         )
     )
@@ -91,17 +89,17 @@ class PlayerViewSet(viewsets.ViewSet):
         db = get_redis_connection("default")
         players_list = db.keys("player:*")
         stack_list = [db.get(player) for player in players_list]
-        return Response({"players": f"{players_list} - {stack_list}"})
+        return Response({"players": zip(players_list, stack_list)})
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
                 "player_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER, description="11"
+                    type=openapi.TYPE_INTEGER,
                 ),
-                "stack": openapi.Schema(type=openapi.TYPE_INTEGER, description="10000"),
-                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="1"),
+                "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
             },
         )
     )
@@ -125,9 +123,10 @@ class PlayerViewSet(viewsets.ViewSet):
         player = ""
         try:
             player = db.get(f"player:{str(pk)}")
+
         except Exception as e:
             return Response({"error": e})
-        return Response({"stack": player})
+        return Response(player)
 
 
 class TransactionViewSet(viewsets.ViewSet):
