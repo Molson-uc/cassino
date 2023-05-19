@@ -11,16 +11,16 @@ def test_redis():
     print(redis_conn)
 
 
-class Transation:
+class Transaction:
     def __init__(self) -> None:
         self.db = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
-        self.lau_transfer = """
+        self.lau_commands = """
         redis.call('DECRBY', KEYS[1], ARGV[1])
         redis.call('INCRBY', KEYS[2], ARGV[1])
         """
-        self.transfer = self.db.script_load(self.lau_transfer)
+        self.commands_sha = self.db.script_load(self.lau_commands)
 
-    def transaction(self, source, target, money):
+    def execute(self, source, target, money):
         pipe = self.db.pipeline(transaction=True)
-        pipe.evalsha(self.transfer, 2, source, target, money)
+        pipe.evalsha(self.commands_sha, 2, source, target, money)
         pipe.execute()

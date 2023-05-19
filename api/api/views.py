@@ -5,7 +5,7 @@ from django_redis import get_redis_connection
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
-from .transactions import Transation
+from .redis_commands import Transaction
 
 
 class TableViewSet(viewsets.ViewSet):
@@ -141,7 +141,7 @@ class TransactionViewSet(viewsets.ViewSet):
                     source_table = table
 
             if db.sismember(source_table, target):
-                transaction = Transation()
+                transaction = Transaction()
                 try:
                     transaction.transaction(source, target, money)
                 except Exception as e:
