@@ -1,14 +1,8 @@
 from django_redis import get_redis_connection
-
 import redis
 import os
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
-
-
-def test_redis():
-    redis_conn = get_redis_connection("default")
-    print(redis_conn)
 
 
 class Transaction:
@@ -32,3 +26,8 @@ class Transaction:
         pipe = self.db.pipeline(transaction=True)
         pipe.evalsha(self.recharge, 1, target, money)
         pipe.execute()
+
+
+def test_redis():
+    redis_conn = get_redis_connection("default")
+    print(redis_conn)
