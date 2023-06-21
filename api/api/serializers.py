@@ -11,6 +11,7 @@ class PlayerSerializer(serializers.Serializer):
     player_id = serializers.IntegerField()
     table_id = serializers.IntegerField()
     stack = serializers.IntegerField()
+    name = serializers.CharField()
 
 
 class TransactionSerializer(serializers.Serializer):

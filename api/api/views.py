@@ -33,9 +33,9 @@ class TableViewSet(viewsets.ViewSet):
         game_master_key = ""
         if serializer.is_valid():
             game_master_id = serializer.data.get("game_master_id")
-            if db.get(f"game_master:{game_master_id}") is None:
+            if db.get(f"game_master:{game_master_id}:stack") is None:
                 game_master_key = (
-                    f"""game_master:{serializer.data.get("game_master_id")}"""
+                    f"""game_master:{serializer.data.get("game_master_id")}:stack"""
                 )
             else:
                 return Response({"error": "this game master is busy"})
@@ -62,7 +62,7 @@ class TableViewSet(viewsets.ViewSet):
     def update(self, reqeust, pk=None):
         db = get_redis_connection("default")
         player_id = reqeust.data.get("player_id")
-        player_key = f"""player:{player_id}"""
+        player_key = f"""player:{player_id}:stack"""
         table_key = f"table:{pk}"
         print(player_key, table_key)
         try:
@@ -98,6 +98,7 @@ class PlayerViewSet(viewsets.ViewSet):
                 "player_id": openapi.Schema(
                     type=openapi.TYPE_INTEGER,
                 ),
+                "name": openapi.Schema(type=openapi.TYPE_STRING),
                 "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
             },
@@ -109,10 +110,12 @@ class PlayerViewSet(viewsets.ViewSet):
         serializer = PlayerSerializer(data=data)
         if serializer.is_valid():
             player_key = f"""player:{serializer.data.get("player_id")}"""
-            player_stack = f"""player:{serializer.data.get("stack")}"""
+            player_stack = f"""player:{serializer.data.get("stack")}:stack"""
+            player_name = f"""player:{serializer.data.get("name")}:name"""
             table_key = f"""table:{serializer.data.get("table_id")}"""
             if db.get(player_key) is None:
                 db.set(player_key, player_stack)
+                db.set(player_key, player_name)
                 db.sadd(table_key, player_key)
             else:
                 return Response({"ERROR": "this player exists"})
@@ -122,7 +125,7 @@ class PlayerViewSet(viewsets.ViewSet):
         db = get_redis_connection("default")
         player = ""
         try:
-            player = db.get(f"player:{str(pk)}")
+            player = db.get(f"player:{str(pk)}:stack")
 
         except Exception as e:
             return Response({"error": e})
