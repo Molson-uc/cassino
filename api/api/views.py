@@ -67,8 +67,6 @@ class TableViewSet(viewsets.ViewSet):
         print(player_key, table_key)
         try:
             db.srem(table_key, player_key)
-            # print(db.get(table_key))
-            pass
         except Exception as e:
             return Response({"error": e})
         table = db.smembers(table_key)
@@ -123,7 +121,6 @@ class PlayerViewSet(viewsets.ViewSet):
         player = ""
         try:
             player = db.get(f"player:{str(pk)}")
-
         except Exception as e:
             return Response({"error": e})
         return Response(player)

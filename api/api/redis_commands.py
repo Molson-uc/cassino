@@ -9,11 +9,16 @@ class Transaction:
     def __init__(self) -> None:
         self.db = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
         self.lau_transaction = """
-        redis.call('DECRBY', KEYS[1], ARGV[1])
-        redis.call('INCRBY', KEYS[2], ARGV[1])
+        if KEYS[1]~=KEYS[2] then
+            redis.call('DECRBY', KEYS[1], ARGV[1])
+            redis.call('INCRBY', KEYS[2], ARGV[1])
+        end
         """
+
         self.lau_recharge = """
-        redis.call('INCRBY', KEYS[1], ARGV[1])"""
+        redis.call('INCRBY', KEYS[1], ARGV[1])
+        """
+
         self.transaction = self.db.script_load(self.lau_transaction)
         self.recharge = self.db.script_load(self.lau_recharge)
 
