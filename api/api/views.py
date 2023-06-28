@@ -5,7 +5,7 @@ from django_redis import get_redis_connection
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
-from .redis_commands import Transaction
+from .utils import Transaction
 
 
 class TableViewSet(viewsets.ViewSet):
