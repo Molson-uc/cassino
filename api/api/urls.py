@@ -33,13 +33,13 @@ from drf_spectacular.views import (
 
 from . import views
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Cassino API",
-        default_version="v1",
-    ),
-    public=True,
-)
+# schema_view = get_schema_view(
+#     openapi.Info(
+#         title="Cassino API",
+#         default_version="v1",
+#     ),
+#     public=True,
+# )
 
 
 app_name = "cassino"
@@ -55,9 +55,10 @@ urlpatterns = [
     #     schema_view.with_ui("swagger", cache_timeout=0),
     #     name="schema-swagger-ui",
     # ),
-    # path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    # path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("accounts/", include("accounts.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger-ui/",
         SpectacularSwaggerView.as_view(url_name="schema"),

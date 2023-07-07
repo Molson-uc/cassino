@@ -11,6 +11,9 @@ from accounts.permissions import TablesPermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
+
 
 class TableViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -24,16 +27,17 @@ class TableViewSet(viewsets.ViewSet):
         table_list = db.keys("table:*")
         return Response({"tables": table_list})
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "game_master_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
-            },
-        )
-    )
+    # @swagger_auto_schema(
+    #     request_body=openapi.Schema(
+    #         type=openapi.TYPE_OBJECT,
+    #         properties={
+    #             "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+    #             "game_master_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+    #             "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
+    #         },
+    #     )
+    # )
+    @extend_schema(parameters=[TableSerializer], description="create table")
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
@@ -59,14 +63,7 @@ class TableViewSet(viewsets.ViewSet):
             return Response({"table": "created"})
         return Response({"error": "didnt create new table"})
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "player_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-            },
-        )
-    )
+    @extend_schema(request=TransactionSerializer)
     def update(self, reqeust, pk=None):
         db = get_redis_connection("default")
         player_id = reqeust.data.get("player_id")
@@ -97,18 +94,6 @@ class PlayerViewSet(viewsets.ViewSet):
         stack_list = [db.get(player) for player in players_list]
         return Response({"players": zip(players_list, stack_list)})
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "player_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER,
-                ),
-                "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-            },
-        )
-    )
     def create(self, request):
         permission_required = ["accounts.add_table"]
         db = get_redis_connection("default")
