@@ -4,14 +4,22 @@ from rest_framework.parsers import JSONParser
 from django_redis import get_redis_connection
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from django.contrib.auth.decorators import permission_required
 from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
 from .utils import Transaction
+from accounts.permissions import TablesPermission
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class TableViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated]
+    # permission_classes = [TablesPermission]
 
     def list(self, request):
+        print(request.session.items())
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
         return Response({"tables": table_list})
@@ -102,6 +110,7 @@ class PlayerViewSet(viewsets.ViewSet):
         )
     )
     def create(self, request):
+        permission_required = ["accounts.add_table"]
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = PlayerSerializer(data=data)

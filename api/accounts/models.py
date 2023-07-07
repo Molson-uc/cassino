@@ -11,3 +11,11 @@ class CustomUser(AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+    class Meta:
+        permissions = (
+            ("add_table", "can add game table"),
+            ("remove_table", "can remove game table"),
+            ("add_player_table", "add player to exists table"),
+            ("remove_player_table", "remove player from the table"),
+        )
