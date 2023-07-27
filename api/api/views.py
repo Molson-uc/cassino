@@ -1,25 +1,18 @@
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.parsers import JSONParser
-from django_redis import get_redis_connection
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
-from django.contrib.auth.decorators import permission_required
-from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
-from .utils import Transaction
-from accounts.permissions import TablesPermission
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from drf_spectacular.types import OpenApiTypes
+from django_redis import get_redis_connection
+from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
+from .utils import Transaction
+from accounts.permissions import TablesPermission, PlayerManagePermission
 
 
 class TableViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     serializer_class = TableSerializer
-    permission_classes = [IsAuthenticated]
-    # permission_classes = [TablesPermission]
+    permission_classes = [TablesPermission]
 
     def list(self, request):
         print(request.session.items())
@@ -27,17 +20,6 @@ class TableViewSet(viewsets.ViewSet):
         table_list = db.keys("table:*")
         return Response({"tables": table_list})
 
-    # @swagger_auto_schema(
-    #     request_body=openapi.Schema(
-    #         type=openapi.TYPE_OBJECT,
-    #         properties={
-    #             "table_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-    #             "game_master_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-    #             "stack": openapi.Schema(type=openapi.TYPE_INTEGER),
-    #         },
-    #     )
-    # )
-    @extend_schema(parameters=[TableSerializer], description="create table")
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
@@ -63,7 +45,6 @@ class TableViewSet(viewsets.ViewSet):
             return Response({"table": "created"})
         return Response({"error": "didnt create new table"})
 
-    @extend_schema(request=TransactionSerializer)
     def update(self, reqeust, pk=None):
         db = get_redis_connection("default")
         player_id = reqeust.data.get("player_id")
@@ -87,6 +68,7 @@ class TableViewSet(viewsets.ViewSet):
 
 class PlayerViewSet(viewsets.ViewSet):
     serializer_class = PlayerSerializer
+    permission_classes = [PlayerManagePermission]
 
     def list(self, request):
         db = get_redis_connection("default")
@@ -123,20 +105,6 @@ class PlayerViewSet(viewsets.ViewSet):
 class TransactionViewSet(viewsets.ViewSet):
     serializer_class = TransactionSerializer
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "source_id": openapi.Schema(
-                    type=openapi.TYPE_STRING, description="player:1"
-                ),
-                "target_id": openapi.Schema(
-                    type=openapi.TYPE_STRING, description="game_master:1"
-                ),
-                "money": openapi.Schema(type=openapi.TYPE_INTEGER, description="1000"),
-            },
-        )
-    )
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)

@@ -19,3 +19,8 @@
 
 - run docker compose <code>docker compose up</code>
 - set data to db <code>python script.py</code>
+
+## TODO
+input veryficer / parser
+check table update - add player to existing table
+queue?

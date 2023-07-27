@@ -2,13 +2,25 @@ from rest_framework import permissions
 
 
 class TablesPermission(permissions.BasePermission):
-    message = "Adding customers not allowed."
+    message = "You don't have permissions for tables actions"
 
     def has_permission(self, request, view):
         user = request.user
         if view.action == "list":
-            return user.is_authenticated()
+            return user.is_authenticated
         elif view.action == "create":
-            return all(user.is_authenticated(), user.has_perm("accounts.add_table"))
+            return all([user.is_authenticated, user.has_perm("accounts.add_table")])
         elif view.action == "update":
-            return all(user.is_authenticated(), user.has_perm("accounts.remove_table"))
+            return all([user.is_authenticated, user.has_perm("accounts.remove_table")])
+
+
+class PlayerManagePermission(permissions.BasePermission):
+    message = "You can't manage users"
+
+    def has_permission(self, request, view):
+        manage_func = ["create", "update", "delete"]
+        user = request.user
+        if view.action == "list":
+            return user.is_authenticated
+        elif view.action in manage_func:
+            return all([user.is_authenticated, user.has_perm("accounts.manage_player")])
