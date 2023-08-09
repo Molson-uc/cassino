@@ -1,5 +1,4 @@
 from django.urls import reverse
-from django.test import Client
 from rest_framework.test import APITestCase
 from rest_framework import status
 from accounts.models import CustomUser
@@ -16,17 +15,6 @@ class AccountTests(APITestCase):
         self.assertEqual(CustomUser.objects.count(), 1)
         self.assertEqual(account.username, "tester")
         self.assertTrue(account.check_password("pass"))
-
-
-class TableManagePermissionTest(APITestCase):
-    def setUp(self) -> None:
-        self.client = Client()
-        self.user = CustomUser.objects.create_user(
-            "tester", "tester@gmail.com", password="pass"
-        )
-
-    def test_login(self):
-        response = self.client.post(reverse("token_obtain_pair"))
 
 
 # class AccountsTest(APITestCase):

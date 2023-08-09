@@ -12,6 +12,10 @@ class TablesPermission(permissions.BasePermission):
             return all([user.is_authenticated, user.has_perm("accounts.add_table")])
         elif view.action == "update":
             return all([user.is_authenticated, user.has_perm("accounts.remove_table")])
+        elif view.action == "retrieve":
+            return all(
+                [user.is_authenticated, user.has_perm("accounts.retrieve_table")]
+            )
 
 
 class PlayerManagePermission(permissions.BasePermission):
