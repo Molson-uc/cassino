@@ -1,104 +1,143 @@
 from rest_framework.response import Response
 from rest_framework import viewsets
-from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_redis import get_redis_connection
 from .serializers import TableSerializer, PlayerSerializer, TransactionSerializer
-from .transactions import Transation
+from .utils import Transaction
+from accounts.permissions import TablesPermission, PlayerManagePermission
 
 
 class TableViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    serializer_class = TableSerializer
+    permission_classes = [TablesPermission]
+
     def list(self, request):
+        print(request.session.items())
         db = get_redis_connection("default")
         table_list = db.keys("table:*")
-        table_urls = [
-            f"""http://127.0.0.1:8000/tables/{str(id[6:],"utf-8")}/"""
-            for id in table_list
-        ]
-        return Response({"tables": zip(table_list, table_urls)})
+        return Response({"tables": table_list})
 
     def create(self, request):
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = TableSerializer(data=data)
+        game_master_key = ""
         if serializer.is_valid():
-            game_master_key = f"""game_master:{serializer.data.get("game_master_id")}"""
+            game_master_id = serializer.data.get("game_master_id")
+            if db.get(f"game_master:{game_master_id}") is None:
+                game_master_key = (
+                    f"""game_master:{serializer.data.get("game_master_id")}"""
+                )
+            else:
+                return Response({"error": "this game master is busy"})
             game_master_stack = serializer.data.get("stack") or 0
             table_key = f"""table:{serializer.data.get("table_id")}"""
+            db.set(game_master_key, game_master_stack)
 
-            if db.get(game_master_key) is None:
-                db.set(game_master_key, game_master_stack)
-            else:
-                return Response({"ERROR": "this game master exists"})
             if db.get(table_key) is None:
                 db.sadd(table_key, game_master_key)
             else:
                 return Response({"ERROR": "this table exists"})
 
-        return Response({"table": "created"})
+            return Response({"table": "created"})
+        return Response({"error": "didnt create new table"})
+
+    def update(self, reqeust, pk=None):
+        db = get_redis_connection("default")
+        player_id = reqeust.data.get("player_id")
+        player_key = f"""player:{player_id}"""
+        table_key = f"table:{pk}"
+        print(player_key, table_key)
+        try:
+            db.srem(table_key, player_key)
+        except Exception as e:
+            return Response({"error": e})
+        table = db.smembers(table_key)
+        print(table)
+        return Response({"table": "table"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-
         table = ""
-        try:
-            table = db.smembers(f"""table:{pk}""")
-        except Exception as e:
-            print(e)
-            return Response({"error": "error"})
-
-        return Response({f"table{pk}": table})
-
-
-from django_redis import get_redis_connection
+        table = db.smembers(f"""table:{str(pk)}""")
+        return Response({f"table{str(pk)}": table})
 
 
 class PlayerViewSet(viewsets.ViewSet):
+    serializer_class = PlayerSerializer
+    permission_classes = [PlayerManagePermission]
+
     def list(self, request):
         db = get_redis_connection("default")
-        player_list = db.keys("player:*")
-
-        player_urls = [
-            f"""http://127.0.0.1:8000/players/{str(id[7:],"utf-8")}/"""
-            for id in player_list
-        ]
-        return Response({"players": zip(player_list, player_urls)})
+        players_list = db.keys("player:*")
+        stack_list = [db.get(player) for player in players_list]
+        return Response({"players": zip(players_list, stack_list)})
 
     def create(self, request):
+        permission_required = ["accounts.add_table"]
         db = get_redis_connection("default")
         data = JSONParser().parse(request)
         serializer = PlayerSerializer(data=data)
         if serializer.is_valid():
             player_key = f"""player:{serializer.data.get("player_id")}"""
             player_stack = f"""player:{serializer.data.get("stack")}"""
+            table_key = f"""table:{serializer.data.get("table_id")}"""
             if db.get(player_key) is None:
                 db.set(player_key, player_stack)
+                db.sadd(table_key, player_key)
             else:
                 return Response({"ERROR": "this player exists"})
-
-        return Response({"player": "create"})
-
-    def get(self, request):
-        transaction = Transation()
-        transaction("player:1", "player:2", 100)
-        return Response({"player": "get"})
+        return Response({"player": "created"})
 
     def retrieve(self, request, pk=None):
         db = get_redis_connection("default")
-
         player = ""
         try:
-            player = db.get(f"""player:{pk}""")
+            player = db.get(f"player:{str(pk)}")
         except Exception as e:
-            print(e)
-            return Response({"error": "error"})
-
+            return Response({"error": e})
         return Response(player)
 
 
-class TransactionView(APIView):
-    def post(self, request):
+class TransactionViewSet(viewsets.ViewSet):
+    serializer_class = TransactionSerializer
+
+    def create(self, request):
+        db = get_redis_connection("default")
         data = JSONParser().parse(request)
+        table_list = db.keys("table:*")
         serializer = TransactionSerializer(data=data)
-        transaction = Transation()
-        transaction("player:1", "player:2", 100)
+
+        if serializer.is_valid():
+            source = serializer.data.get("source_id")
+            target = serializer.data.get("target_id")
+            money = serializer.data.get("money")
+            source_table = ""
+            if source == "bank":
+                transaction = Transaction()
+                try:
+                    transaction.recharge_execute(target, money)
+                except Exception as e:
+                    return Response({"error": e})
+                target_stack = db.get(target)
+                return Response({"target_stack": target_stack})
+            else:
+                for table in table_list:
+                    if db.sismember(table, source):
+                        source_table = table
+
+                if db.sismember(source_table, target):
+                    transaction = Transaction()
+                    try:
+                        transaction.transaction_execute(source, target, money)
+                    except Exception as e:
+                        return Response({"error": e})
+                    source_stack = db.get(source)
+                    target_stack = db.get(target)
+                    return Response(
+                        {"source_stack": source_stack, "target_stack": target_stack}
+                    )
+        return Response({"error": "player from other table"})

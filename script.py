@@ -5,7 +5,10 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "127.0.0.1")
 
 
 def set_dataset():
-    r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    try:
+        r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    except Exception as e:
+        print(e)
 
     r.set("game_master:1", 0)
     r.set("game_master:2", 0)
@@ -26,10 +29,6 @@ def set_dataset():
 
     for i in range(7, 10):
         r.sadd("table:3", f"player:{i}")
-
-
-def set_lua_transactions():
-    lua_transaction = """Q"""
 
 
 if __name__ == "__main__":

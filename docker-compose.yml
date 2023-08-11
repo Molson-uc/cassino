@@ -1,20 +1,37 @@
-version: '3.2'
+version: '3.9'
 
 services:
-  redis:
-    image: redis:7.0.5-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-
   web:
+
     environment:
       - REDIS_HOST=redis
     build:
       context: .
       dockerfile: Dockerfile
-    image: cassino_api
+    volumes:
+      - ./api:/code/
     ports:
       - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
     depends_on:
       - redis
+
+  redis:
+    image: redis:7.0.5-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    # web:
+    #   restart: always
+    #   environment:
+    #     - REDIS_HOST=redis
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile
+    #   # command: python manage.py runserver
+    #   volumes:
+    #     - ./api:/code
+    #   ports:
+    #     - "8000:8000"
+    #   depends_on:
+    #     - redis
