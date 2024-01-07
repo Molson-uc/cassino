@@ -1,12 +1,4 @@
-# Cassino
-
-## TODO
-
-- script which creates data structures
-- add and remove players from the table
-- transactions - money from players' accounts and to them
-- checking accounts status
-- adding money from outside
+# Cassino API
 
 ## Technologies
 
@@ -14,13 +6,25 @@
 - Redis
 - Lua scripts
 - Transactions
+- Docker
 
 ## Instructions
 
-- run docker compose <code>docker compose up</code>
-- set data to db <code>python script.py</code>
+To use the Cassino API, follow these steps:
 
-## TODO
-input veryficer / parser
-check table update - add player to existing table
-queue?
+1. Run Docker Compose:
+   <code>docker-compose up</code>
+
+2. Set data in the database:
+   <code>python script.py</code>
+
+## Introduction
+
+The Cassino API is designed for handling token transactions in a web casino. The project prioritizes high performance, utilizing Redis as the database for efficient transaction management.
+
+Supported functions include:
+
+- Creating/Deleting game tables
+- Creating/Deleting players for tables
+- Token transactions
+- Purchasing of tokens
